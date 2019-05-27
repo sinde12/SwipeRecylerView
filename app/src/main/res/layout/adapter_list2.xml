@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<leyiwulian.bluetoothvoice.iat.swiperecylerview.SwipeItemView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    app:functionType="leftAndRight">
+    <TextView
+        android:id="@+id/editTV"
+        android:layout_width="50dp"
+        android:layout_height="match_parent"
+        android:text="编辑"
+        android:gravity="center"
+        android:background="#ffffff"
+        android:textColor="#000000"/>
+
+    <android.support.constraint.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <TextView
+            android:id="@+id/tv"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:layout_width="match_parent"
+            android:textColor="#ff0000"
+            android:textSize="17sp"
+            android:layout_height="50dp" />
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0.5dp"
+            app:layout_constraintLeft_toLeftOf="parent"
+            android:background="#ffff"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+    </android.support.constraint.ConstraintLayout>
+    <TextView
+        android:id="@+id/deleteTV"
+        android:layout_width="100dp"
+        android:layout_height="match_parent"
+        android:text="删除"
+        android:background="#ffffff"
+        android:gravity="center"
+        android:textColor="#000000"/>
+</leyiwulian.bluetoothvoice.iat.swiperecylerview.SwipeItemView>
