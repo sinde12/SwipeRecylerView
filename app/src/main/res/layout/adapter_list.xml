@@ -3,17 +3,13 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto">
-
     <TextView
-        android:layout_width="100dp"
-        android:layout_height="match_parent"
-        android:text="删除"
-        android:background="#ffffff"
-        android:textColor="#000000"/>
-    <TextView
+        android:id="@+id/editTV"
         android:layout_width="50dp"
         android:layout_height="match_parent"
         android:text="编辑"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintRight_toLeftOf="parent"
         android:background="#ffffff"
         android:textColor="#000000"/>
     <TextView
@@ -30,4 +26,13 @@
         app:layout_constraintLeft_toLeftOf="parent"
         android:background="#ffff"
         app:layout_constraintBottom_toBottomOf="parent"/>
+    <TextView
+        android:id="@+id/deleteTV"
+        android:layout_width="100dp"
+        android:layout_height="match_parent"
+        android:text="删除"
+        android:background="#ffffff"
+        app:layout_constraintLeft_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:textColor="#000000"/>
 </android.support.constraint.ConstraintLayout>
