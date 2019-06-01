@@ -10,6 +10,7 @@ import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
 import android.view.ViewConfiguration;
+import android.view.ViewGroup;
 
 public class SwipeRecyclerView extends RecyclerView {
 
@@ -145,7 +146,7 @@ public class SwipeRecyclerView extends RecyclerView {
     //获取该点的itemView对象
     private TouchView getTouchPosition(int x,int y){
         if (getLayoutManager() instanceof LinearLayoutManager){
-            if (getAdapter() instanceof ISwipeRecyclerViewAdapter){
+            if (getAdapter() != null){
                 int firstPosition = ((LinearLayoutManager)getLayoutManager()).findFirstVisibleItemPosition();
                 Rect rect = new Rect();
                 for (int i=0;i<getChildCount();i++){
@@ -153,7 +154,11 @@ public class SwipeRecyclerView extends RecyclerView {
                     if (v.getVisibility() == VISIBLE){
                         v.getHitRect(rect);
                         if (rect.contains(x,y)){
-                            return new TouchView(v,firstPosition+i,x,y,(ISwipeRecyclerViewAdapter)getAdapter());
+                            if (getAdapter() instanceof ISwipeRecyclerViewAdapter){
+                                return new TouchView(v,firstPosition+i,x,y,(ISwipeRecyclerViewAdapter)getAdapter());
+                            }else {
+                                return new TouchView(v,firstPosition+i,x,y,null);
+                            }
                         }
                     }
                 }
@@ -279,7 +284,7 @@ public class SwipeRecyclerView extends RecyclerView {
 
         //是否有编辑模式
         private boolean isAllowEnterEditMode(){
-            return (swipeRecyclerViewAdapter.leftFunctionWidth(position)>0 || swipeRecyclerViewAdapter.rightFunctionWidth(position)>0) && (editMode != EditMode.DONE);
+            return (leftFunctionWidth()>0 || rightFunctionWidth()>0) && (editMode != EditMode.DONE);
         }
 
         //是否已进入编辑模式
@@ -308,11 +313,37 @@ public class SwipeRecyclerView extends RecyclerView {
 
         //左边菜单的宽度
         private int leftFunctionWidth(){
+            if (itemView instanceof SwipeItemView){
+                return ((SwipeItemView) itemView).getLeftFunctionViewWidth();
+            }else if (swipeRecyclerViewAdapter == null){
+                if (itemView instanceof ViewGroup && ((ViewGroup)itemView).getChildCount() > 1){
+                    ViewGroup itemViewG = (ViewGroup)itemView;
+                    for (int i=0;i<itemViewG.getChildCount();i++){
+                        if (itemViewG.getChildAt(i).getVisibility() == VISIBLE){
+                            return itemViewG.getChildAt(i).getMeasuredWidth();
+                        }
+                    }
+                }
+                return 0;
+            }
             return (int)(getContext().getResources().getDisplayMetrics().density*swipeRecyclerViewAdapter.leftFunctionWidth(position));
         }
 
         //又边菜单的宽度
         private int rightFunctionWidth(){
+            if (itemView instanceof SwipeItemView){
+                return ((SwipeItemView) itemView).getRightFunctionViewWidth();
+            }else if (swipeRecyclerViewAdapter == null){
+                if (itemView instanceof ViewGroup && ((ViewGroup)itemView).getChildCount() > 1){
+                    ViewGroup itemViewG = (ViewGroup)itemView;
+                    for (int i=itemViewG.getChildCount()-1;i>0;i--){
+                        if (itemViewG.getChildAt(i).getVisibility() == VISIBLE){
+                            return itemViewG.getChildAt(i).getMeasuredWidth();
+                        }
+                    }
+                }
+                return 0;
+            }
             return (int)(getContext().getResources().getDisplayMetrics().density*swipeRecyclerViewAdapter.rightFunctionWidth(position));
         }
 
