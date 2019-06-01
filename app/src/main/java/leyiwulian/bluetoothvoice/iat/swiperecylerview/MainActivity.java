@@ -26,7 +26,7 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setAdapter(new IAdapter());
     }
 
-    private class IAdapter extends RecyclerView.Adapter<IAdapter.IHolder> implements ISwipeRecyclerViewAdapter{
+    private class IAdapter extends RecyclerView.Adapter<IAdapter.IHolder>{
 
         private List<String> datas = new ArrayList<>();
         IAdapter(){
@@ -38,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
         @NonNull
         @Override
         public IHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
-            return new IHolder(View.inflate(MainActivity.this,R.layout.adapter_list2,null));
+            return new IHolder(View.inflate(MainActivity.this,R.layout.adapter_list,null));
         }
 
         @Override
@@ -52,15 +52,15 @@ public class MainActivity extends AppCompatActivity {
             return datas.size();
         }
 
-        @Override
-        public int leftFunctionWidth(int position) {
-            return 50;
-        }
-
-        @Override
-        public int rightFunctionWidth(int position) {
-            return 100;
-        }
+//        @Override
+//        public int leftFunctionWidth(int position) {
+//            return 50;
+//        }
+//
+//        @Override
+//        public int rightFunctionWidth(int position) {
+//            return 100;
+//        }
 
         class IHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
 
@@ -73,6 +73,7 @@ public class MainActivity extends AppCompatActivity {
                 contentTV = v.findViewById(R.id.tv);
                 v.findViewById(R.id.editTV).setOnClickListener(this);
                 v.findViewById(R.id.deleteTV).setOnClickListener(this);
+                v.setOnClickListener(this);
             }
 
             @Override
@@ -84,14 +85,19 @@ public class MainActivity extends AppCompatActivity {
                         break;
                     case R.id.deleteTV:{
                         recyclerView.endEditing();
+                        recyclerView.enableEdit(false);
                         new Handler().postDelayed(new Runnable() {
                             @Override
                             public void run() {
                                 datas.remove(position);
                                 notifyDataSetChanged();
+                                recyclerView.enableEdit(true);
                             }
                         },1000);
                     }
+                        break;
+                    default:
+                        recyclerView.smoothScrollToPosition(0);
                         break;
                 }
             }
