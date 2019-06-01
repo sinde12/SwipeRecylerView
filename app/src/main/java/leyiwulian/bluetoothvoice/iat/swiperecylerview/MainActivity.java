@@ -38,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
         @NonNull
         @Override
         public IHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
+            //return new IHolder(View.inflate(MainActivity.this,R.layout.adapter_list2,null));
             return new IHolder(View.inflate(MainActivity.this,R.layout.adapter_list,null));
         }
 
