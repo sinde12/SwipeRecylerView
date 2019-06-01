@@ -15,6 +15,7 @@ public class SwipeRecyclerView extends RecyclerView {
 
     private int touchSlop;
     private VelocityTracker velocityTracker = null;
+    private boolean enableEdit = true;
 
     public SwipeRecyclerView(Context context) {
         super(context);
@@ -37,9 +38,13 @@ public class SwipeRecyclerView extends RecyclerView {
 
     public void endEditing(){
         if (touchView != null){
-            touchView.resetMode();
+            touchView.endEditMode();
         }
-        touchView = null;
+    }
+
+    //是否允许编辑
+    public void enableEdit(boolean enable){
+        enableEdit = enable;
     }
 
     private TouchView touchView = null;
@@ -53,20 +58,24 @@ public class SwipeRecyclerView extends RecyclerView {
         velocityTracker.addMovement(ev);
         switch (ev.getAction()){
             case MotionEvent.ACTION_DOWN:{
-                TouchView p = getTouchPosition(x,y);
-                if (touchView != null){
-                    if (p.position != touchView.position){
-                        touchView.resetMode();
+                if (enableEdit){
+                    TouchView p = getTouchPosition(x,y);
+                    if (touchView != null && touchView.isEnterEditMode() && p != null){
+                        if (p.position != touchView.position){
+                            touchView.endEditMode();
+                        }else {
+                            touchView.reEnterEditMode(x,y);
+                        }
                     }else {
-                       touchView.setPoint(x,y);
+                        touchView = p;
                     }
                 }else {
-                    touchView = p;
+                    touchView = null;
                 }
             }
                 break;
             case MotionEvent.ACTION_MOVE:{
-                if (touchView != null && touchView.hasEditMode()){
+                if (touchView != null && touchView.isAllowEnterEditMode()){
                     if (!touchView.isEnterEditMode()){
                         //判断是否达到进入编辑模式的条件
                         velocityTracker.computeCurrentVelocity(1000);
@@ -77,7 +86,7 @@ public class SwipeRecyclerView extends RecyclerView {
                             if (p!=null && p.position == touchView.position){
                                 touchView.editMode = (x-touchView.lastX) > 0 ? EditMode.LEFT : EditMode.RIGHT;
                             }else {
-                                touchView = null;
+                                touchView.endEditMode();
                                 break;
                             }
                         }
@@ -86,7 +95,7 @@ public class SwipeRecyclerView extends RecyclerView {
                             return true;
                         }
                     }
-                    touchView.computeLastPoint(x,y);
+                    if (touchView != null) touchView.computeLastPoint(x,y);
                 }
             }
                 break;
@@ -98,13 +107,9 @@ public class SwipeRecyclerView extends RecyclerView {
                 if (touchView != null && touchView.isEnterEditMode()){
                     if (touchView.touchUp(x,y)){
                         touchView.setEditing(true);
-//                        return true;
                     }else {
-                        touchView.setEditing(false);
-                        touchView = null;
+                        touchView.endEditMode();
                     }
-                }else {
-                    touchView = null;
                 }
             }
                 break;
@@ -114,15 +119,27 @@ public class SwipeRecyclerView extends RecyclerView {
                     velocityTracker = null;
                 }
                 if (touchView != null && touchView.isEnterEditMode()){
-                    touchView.resetMode();
-                    touchView = null;
-                    return true;
+                    touchView.endEditMode();
                 }
-                touchView = null;
             }
                 break;
         }
         return super.dispatchTouchEvent(ev);
+    }
+
+    @Override
+    public boolean onInterceptTouchEvent(MotionEvent e) {
+        int action = e.getAction();
+        if (action == MotionEvent.ACTION_MOVE){
+            if (touchView != null && touchView.isEnterEditMode()){
+                return true;
+            }
+        }else if (action == MotionEvent.ACTION_UP){
+            if (touchView != null && touchView.interceptTouchEvent()){
+                return true;
+            }
+        }
+        return super.onInterceptTouchEvent(e);
     }
 
     //获取该点的itemView对象
@@ -151,8 +168,8 @@ public class SwipeRecyclerView extends RecyclerView {
         View itemView;//此次操作的item View对象
         ISwipeRecyclerViewAdapter swipeRecyclerViewAdapter;//在Adapter类中实现该接口，也是判断RecyclerView 是否有编辑模式(必须实现)
         EditMode editMode = EditMode.NONE;
-        EditMode reEditMoe = EditMode.INIT;
         int downX,downY,lastX,lastY = 0;
+        private boolean interceptTouchEvent = false;//是否消费此次touch时间
 
         TouchView(View v, int position, int downX, int downY, ISwipeRecyclerViewAdapter adapter){
             this.position = position;
@@ -185,8 +202,8 @@ public class SwipeRecyclerView extends RecyclerView {
                 }else if (temp < 0){//正常处理，需把倾向取消，
                     markX=0;
                 }
-                if (reEditMoe == EditMode.DONE && Math.abs(downX-x)>touchSlop){
-                    reEditMoe = EditMode.LEFT;
+                if (Math.abs(x-downX) > touchSlop){
+                    interceptTouchEvent = true;
                 }
                 itemView.scrollBy(temp, 0);
             }else if (editMode == EditMode.RIGHT){//防止越界 参考上面备注
@@ -201,8 +218,8 @@ public class SwipeRecyclerView extends RecyclerView {
                 }else if (temp > 0){
                     markX=0;
                 }
-                if (reEditMoe == EditMode.DONE && Math.abs(downX-x)>touchSlop){
-                    reEditMoe = EditMode.RIGHT;
+                if (Math.abs(x-downX) > touchSlop){
+                    interceptTouchEvent = true;
                 }
                 itemView.scrollBy(temp, 0);
             }
@@ -212,7 +229,7 @@ public class SwipeRecyclerView extends RecyclerView {
         }
 
         //结束辑操作，本次事件不在处理
-        private void resetMode(){
+        private void endEditMode(){
             setEditing(false);
             markX = 0;
             editMode = EditMode.DONE;
@@ -220,24 +237,25 @@ public class SwipeRecyclerView extends RecyclerView {
 
         //松开手指时判断是否进入编辑模式，true 达到进入编辑模式条件，false 为达到条件
         private boolean touchUp(int x,int y){
-            if (reEditMoe == EditMode.DONE){
-                reEditMoe = EditMode.INIT;
+            if (editMode == EditMode.DONE){
+                interceptTouchEvent = true;
+                return false;
+            }else if (!interceptTouchEvent){
                 if (editMode == EditMode.LEFT && x < leftFunctionWidth()){
                     return true;
                 }else if (editMode == EditMode.RIGHT && x > (itemView.getMeasuredWidth() - rightFunctionWidth())){
                     return true;
                 }
+                interceptTouchEvent = true;
                 return false;
             }else if (markX > 0){
                 boolean flag = Math.abs(markX-x) > touchSlop;
                 markX = 0;
-                reEditMoe = EditMode.INIT;
+                interceptTouchEvent = true;
                 return !flag;
             }else if (editMode == EditMode.LEFT && Math.abs(itemView.getScrollX()*1f/leftFunctionWidth()) > 0.25f){
-                reEditMoe = EditMode.INIT;
                 return true;
             }else if (editMode == EditMode.RIGHT && Math.abs(itemView.getScrollX()*1f/rightFunctionWidth()) > 0.25f){
-                reEditMoe = EditMode.INIT;
                 return true;
             }
             return false;
@@ -260,8 +278,8 @@ public class SwipeRecyclerView extends RecyclerView {
         }
 
         //是否有编辑模式
-        private boolean hasEditMode(){
-            return swipeRecyclerViewAdapter.leftFunctionWidth(position)>0 || swipeRecyclerViewAdapter.rightFunctionWidth(position)>0;
+        private boolean isAllowEnterEditMode(){
+            return (swipeRecyclerViewAdapter.leftFunctionWidth(position)>0 || swipeRecyclerViewAdapter.rightFunctionWidth(position)>0) && (editMode != EditMode.DONE);
         }
 
         //是否已进入编辑模式
@@ -282,10 +300,10 @@ public class SwipeRecyclerView extends RecyclerView {
         }
 
         //记录touch down的位置
-        private void setPoint(int x,int y){
+        private void reEnterEditMode(int x,int y){
             downX = lastX = x;
             downY = lastY = y;
-            reEditMoe = EditMode.DONE;
+            interceptTouchEvent = false;
         }
 
         //左边菜单的宽度
@@ -298,11 +316,14 @@ public class SwipeRecyclerView extends RecyclerView {
             return (int)(getContext().getResources().getDisplayMetrics().density*swipeRecyclerViewAdapter.rightFunctionWidth(position));
         }
 
+        private boolean interceptTouchEvent(){
+            return interceptTouchEvent;
+        }
+
     }
 
     private enum EditMode{
 
-        INIT,
         NONE,//初始
         LEFT,//左编辑模式
         RIGHT,//右编辑
