@@ -44,55 +44,44 @@ public class SwipeItemView extends ViewGroup {
     public void setSwipeRecyclerViewAdapter(ISwipeRecyclerViewAdapter swipeRecyclerViewAdapter,int position) {
         this.swipeRecyclerViewAdapter = swipeRecyclerViewAdapter;
         this.position = position;
+        requestLayout();
     }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        if ((functionType == FunctionType.left || functionType == FunctionType.right) && getChildCount() != 2){
-            throw new RuntimeException("when functionType is left or right,this view must contain 2 children");
-        }else if (functionType == FunctionType.leftAndRight && getChildCount() != 3){
-            throw new RuntimeException("when functionType is leftAndRight,this view must contain 3 children");
+        if ((functionType == FunctionType.left || functionType == FunctionType.right) && getVisibilityChildCount() != 2){
+            throw new RuntimeException("when functionType is left or right,this view must contain 2 visibility children");
+        }else if (functionType == FunctionType.leftAndRight && getVisibilityChildCount() != 3){
+            throw new RuntimeException("when functionType is leftAndRight,this view must contain 3 visibility children");
         }
+        View leftView = getLeftView();
+        View contentView = getContentView();
+        View rightView = getRightView();
         if (swipeRecyclerViewAdapter != null){
             int leftWidth = swipeRecyclerViewAdapter.leftFunctionWidth(position);
             int rightWidth = swipeRecyclerViewAdapter.rightFunctionWidth(position);
-            View contentView = null;
+
             if (functionType == FunctionType.left){
-                View leftView = getChildAt(0);
-                contentView = getChildAt(1);
-                measureChild(leftView,widthMeasureSpec,heightMeasureSpec);
-//                leftView.measure(MeasureSpec.makeMeasureSpec(leftWidth,MeasureSpec.EXACTLY),heightMeasureSpec);
+//                measureChild(leftView,widthMeasureSpec,heightMeasureSpec);
+                leftView.measure(MeasureSpec.makeMeasureSpec(leftWidth,MeasureSpec.EXACTLY),heightMeasureSpec);
             }else if (functionType == FunctionType.right){
-                View rightView = getChildAt(1);
-                contentView = getChildAt(0);
-                measureChild(rightView,widthMeasureSpec,heightMeasureSpec);
-//                rightView.measure(MeasureSpec.makeMeasureSpec(rightWidth,MeasureSpec.EXACTLY),heightMeasureSpec);
+//                measureChild(rightView,widthMeasureSpec,heightMeasureSpec);
+                rightView.measure(MeasureSpec.makeMeasureSpec(rightWidth,MeasureSpec.EXACTLY),heightMeasureSpec);
             }else if (functionType == FunctionType.leftAndRight){
-                View leftView = getChildAt(0);
-                contentView = getChildAt(1);
                 leftView.measure(MeasureSpec.makeMeasureSpec(leftWidth, MeasureSpec.EXACTLY),heightMeasureSpec);
-                View rightView = getChildAt(2);
                 rightView.measure(MeasureSpec.makeMeasureSpec(rightWidth, MeasureSpec.EXACTLY),heightMeasureSpec);
             }
             if (contentView != null){
                 measureChild(contentView,widthMeasureSpec,heightMeasureSpec);
             }
         }else {
-            View contentView = null;
             if (functionType == FunctionType.left){
-                View leftView = getChildAt(0);
-                contentView = getChildAt(1);
                 measureChild(leftView,widthMeasureSpec,heightMeasureSpec);
             }else if (functionType == FunctionType.right){
-                View rightView = getChildAt(1);
-                contentView = getChildAt(0);
                 measureChild(rightView,widthMeasureSpec,heightMeasureSpec);
             }else if (functionType == FunctionType.leftAndRight){
-                View leftView = getChildAt(0);
-                contentView = getChildAt(1);
                 measureChild(leftView,widthMeasureSpec,heightMeasureSpec);
-                View rightView = getChildAt(2);
                 measureChild(rightView,widthMeasureSpec,heightMeasureSpec);
             }
             if (contentView != null){
@@ -101,22 +90,83 @@ public class SwipeItemView extends ViewGroup {
         }
     }
 
+    private int getVisibilityChildCount(){
+        int count = getChildCount();
+        for (int i=0;i<getChildCount();i++){
+            if (getChildAt(i).getVisibility() != VISIBLE){
+                count--;
+            }
+        }
+        return count;
+    }
+
+    private View getLeftView(){
+        if (functionType == FunctionType.left || functionType== FunctionType.leftAndRight){
+            for (int i=0;i<getChildCount();i++){
+                if (getChildAt(i).getVisibility() == VISIBLE){
+                    return getChildAt(i);
+                }
+            }
+        }
+        return null;
+    }
+
+    private View getContentView(){
+        if (functionType == FunctionType.left || functionType== FunctionType.leftAndRight){
+            int index = 0;
+            for (int i=0;i<getChildCount();i++){
+                if (getChildAt(i).getVisibility() == VISIBLE){
+                    if (index == 1){
+                        return getChildAt(i);
+                    }
+                    index++;
+                }
+            }
+        }else {
+            for (int i=0;i<getChildCount();i++){
+                if (getChildAt(i).getVisibility() == VISIBLE){
+                    return getChildAt(i);
+                }
+            }
+        }
+        return null;
+    }
+
+    private View getRightView(){
+        if (functionType == FunctionType.right || functionType== FunctionType.leftAndRight){
+            for (int i=getChildCount()-1;i>=0;i--){
+                if (getChildAt(i).getVisibility() == VISIBLE){
+                    return getChildAt(i);
+                }
+            }
+        }
+        return null;
+    }
+
+    public int getLeftFunctionViewWidth(){
+        View left = getLeftView();
+        if (left != null)return left.getMeasuredWidth();
+        return 0;
+    }
+
+    public int getRightFunctionViewWidth(){
+        View right = getRightView();
+        if (right != null)return right.getMeasuredWidth();
+        return 0;
+    }
+
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
+        View leftView = getLeftView();
+        View contentView = getContentView();
+        View rightView = getRightView();
         if (functionType == FunctionType.left){
-            View leftView = getChildAt(0);
-            View contentView = getChildAt(1);
             leftView.layout(-leftView.getMeasuredWidth(),0,0,leftView.getMeasuredHeight());
             contentView.layout(0,0,contentView.getMeasuredWidth(),contentView.getMeasuredHeight());
         }else if (functionType == FunctionType.right){
-            View rightView = getChildAt(1);
-            View contentView = getChildAt(0);
             rightView.layout(getMeasuredWidth(),0,getMeasuredWidth()+rightView.getMeasuredWidth(),rightView.getMeasuredHeight());
             contentView.layout(0,0,contentView.getMeasuredWidth(),contentView.getMeasuredHeight());
         }else if (functionType == FunctionType.leftAndRight){
-            View leftView = getChildAt(0);
-            View contentView = getChildAt(1);
-            View rightView = getChildAt(2);
             leftView.layout(-leftView.getMeasuredWidth(),0,0,leftView.getMeasuredHeight());
             contentView.layout(0,0,contentView.getMeasuredWidth(),contentView.getMeasuredHeight());
             rightView.layout(getMeasuredWidth(),0,getMeasuredWidth()+rightView.getMeasuredWidth(),rightView.getMeasuredHeight());
@@ -136,11 +186,11 @@ public class SwipeItemView extends ViewGroup {
         this.editType = type;
         switch (editType){
             case left:{
-                View leftView = getChildAt(0);
+                View leftView = getLeftView();
                 scroller.startScroll(getScrollX(),0,-leftView.getMeasuredWidth()-getScrollX(),0);
             }break;
             case right:{
-                View rightView = getChildAt(1);
+                View rightView = getRightView();
                 if (functionType == FunctionType.leftAndRight)rightView = getChildAt(2);
                 scroller.startScroll(getScrollX(),0,rightView.getMeasuredWidth()-getScrollX(),0);
             }break;
