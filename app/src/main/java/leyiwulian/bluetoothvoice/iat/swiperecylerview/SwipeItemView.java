@@ -100,7 +100,7 @@ public class SwipeItemView extends ViewGroup {
         return count;
     }
 
-    private View getLeftView(){
+    View getLeftView(){
         if (functionType == FunctionType.left || functionType== FunctionType.leftAndRight){
             for (int i=0;i<getChildCount();i++){
                 if (getChildAt(i).getVisibility() == VISIBLE){
@@ -132,7 +132,7 @@ public class SwipeItemView extends ViewGroup {
         return null;
     }
 
-    private View getRightView(){
+    View getRightView(){
         if (functionType == FunctionType.right || functionType== FunctionType.leftAndRight){
             for (int i=getChildCount()-1;i>=0;i--){
                 if (getChildAt(i).getVisibility() == VISIBLE){
