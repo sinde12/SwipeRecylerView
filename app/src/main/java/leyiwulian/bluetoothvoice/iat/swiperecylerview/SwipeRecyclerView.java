@@ -107,7 +107,7 @@ public class SwipeRecyclerView extends RecyclerView {
                 }
                 if (touchView != null && touchView.isEnterEditMode()){
                     if (touchView.touchUp(x,y)){
-                        touchView.setEditing(true);
+                        touchView.enterEditMode();
                     }else {
                         touchView.endEditMode();
                     }
@@ -240,6 +240,11 @@ public class SwipeRecyclerView extends RecyclerView {
             editMode = EditMode.DONE;
         }
 
+        private void enterEditMode(){
+            setEditing(true);
+            markX = 0;
+        }
+
         //松开手指时判断是否进入编辑模式，true 达到进入编辑模式条件，false 为达到条件
         private boolean touchUp(int x,int y){
             if (editMode == EditMode.DONE){
@@ -279,6 +284,10 @@ public class SwipeRecyclerView extends RecyclerView {
                     if (editing) itemView.scrollTo(rightFunctionWidth(),0);
                     else itemView.scrollTo(0,0);
                 }
+            }
+            if (swipeRecyclerViewAdapter != null){
+                if (editing)swipeRecyclerViewAdapter.enterEditMode(position,editMode==EditMode.LEFT?getLeftView():getRightView());
+                else swipeRecyclerViewAdapter.exitEditMode(position,editMode==EditMode.LEFT?getLeftView():getRightView());
             }
         }
 
@@ -349,6 +358,40 @@ public class SwipeRecyclerView extends RecyclerView {
 
         private boolean interceptTouchEvent(){
             return interceptTouchEvent;
+        }
+
+        private View getLeftView(){
+            if (leftFunctionWidth() != 0){
+                if (itemView instanceof SwipeItemView){
+                    return ((SwipeItemView) itemView).getLeftView();
+                }
+                if (itemView instanceof ViewGroup){
+                    ViewGroup itemViewG = (ViewGroup)itemView;
+                    for (int i=0;i<itemViewG.getChildCount();i++){
+                        if (itemViewG.getChildAt(i).getVisibility() == VISIBLE){
+                            return itemViewG.getChildAt(i);
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        private View getRightView(){
+            if (rightFunctionWidth() >0){
+                if (itemView instanceof SwipeItemView){
+                    return ((SwipeItemView) itemView).getRightView();
+                }
+                if (itemView instanceof ViewGroup){
+                    ViewGroup itemViewG = (ViewGroup)itemView;
+                    for (int i=itemViewG.getChildCount()-1;i>0;i--){
+                        if (itemViewG.getChildAt(i).getVisibility() == VISIBLE){
+                            return itemViewG.getChildAt(i);
+                        }
+                    }
+                }
+            }
+            return null;
         }
 
     }
